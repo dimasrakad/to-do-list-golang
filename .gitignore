@@ -1,0 +1,52 @@
+# =========================
+# Go build outputs
+# =========================
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Build directories
+bin/
+build/
+dist/
+
+# Dependency vendor
+vendor/
+
+# Go workspace (GOPATH)
+pkg/
+
+# =========================
+# Config & Env
+# =========================
+.env
+.env.local
+*.env
+
+# =========================
+# Logs & Temp files
+# =========================
+*.log
+tmp/
+*.swp
+*.swo
+
+# =========================
+# IDE / Editor
+# =========================
+.vscode/
+.idea/
+*.iml
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# =========================
+# Air / Fresh / Reflex configs
+# =========================
+.air.toml
