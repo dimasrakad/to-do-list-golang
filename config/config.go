@@ -9,12 +9,13 @@ import (
 )
 
 type Config struct {
-	AppPort string
-	DBUser  string
-	DBPass  string
-	DBHost  string
-	DBPort  string
-	DBName  string
+	AppPort     string
+	AppLocation string
+	DBUser      string
+	DBPass      string
+	DBHost      string
+	DBPort      string
+	DBName      string
 }
 
 var (
@@ -32,12 +33,13 @@ func LoadConfig() *Config {
 		}
 
 		cfg = &Config{
-			AppPort: getEnv("APP_PORT", "8080"),
-			DBUser:  getEnv("DB_USER", "root"),
-			DBPass:  getEnv("DB_PASS", ""),
-			DBHost:  getEnv("DB_HOST", "127.0.0.1"),
-			DBPort:  getEnv("DB_PORT", "3306"),
-			DBName:  getEnv("DB_NAME", "to_do_list_golang"),
+			AppPort:     getEnv("APP_PORT", "8080"),
+			AppLocation: getEnv("APP_LOCATION", "Asia/Jakarta"),
+			DBUser:      getEnv("DB_USER", "root"),
+			DBPass:      getEnv("DB_PASS", ""),
+			DBHost:      getEnv("DB_HOST", "127.0.0.1"),
+			DBPort:      getEnv("DB_PORT", "3306"),
+			DBName:      getEnv("DB_NAME", "to_do_list_golang"),
 		}
 	})
 

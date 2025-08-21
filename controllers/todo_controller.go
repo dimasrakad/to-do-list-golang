@@ -3,6 +3,7 @@ package controllers
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"to-do-list-golang/config"
 	"to-do-list-golang/models"
@@ -17,14 +18,44 @@ func GetTodos(c *gin.Context) {
 }
 
 func CreateTodo(c *gin.Context) {
-	var todo models.Todo
+	cfg := config.LoadConfig()
 
-	if err := c.ShouldBindJSON(&todo); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error})
+	var input struct {
+		Title       string `json:"title" binding:"required"`
+		Priority    string `json:"priority" binding:"oneof=low medium high"`
+		Description string `json:"description"`
+		Due         string `json:"due"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	config.DB.Create(&todo)
+	loc, _ := time.LoadLocation(cfg.AppLocation)
+	due, err := time.ParseInLocation("2006-01-02 15:04:05", input.Due, loc)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format. Use YYYY-MM-DD hh:mm:ss"})
+		return
+	}
+
+	if due.Before(time.Now()) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Due cannot be in the past"})
+		return
+	}
+
+	todo := models.Todo{
+		Title:    input.Title,
+		Priority: input.Priority,
+		Due:      &due,
+	}
+
+	if err := config.DB.Create(&todo).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	c.JSON(http.StatusCreated, todo)
 }
 
@@ -37,7 +68,6 @@ func UpdateTodo(c *gin.Context) {
 		return
 	}
 
-	todo.Done = true
 	config.DB.Save(&todo)
 	c.JSON(http.StatusOK, todo)
 }
