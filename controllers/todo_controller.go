@@ -13,7 +13,37 @@ import (
 
 func GetTodos(c *gin.Context) {
 	var todos []models.Todo
-	config.DB.Find(&todos)
+
+	query := config.DB.Model(&models.Todo{})
+
+	// filter by status
+	if status := c.Query("status"); status != "" {
+		query = query.Where("status = ?", status)
+	}
+
+	// filter by priority
+	if priority := c.Query("priority"); priority != "" {
+		query = query.Where("priority = ?", priority)
+	}
+
+	// filter by due date
+	if dueDate := c.Query("dueDate"); dueDate != "" {
+		query = query.Where("DATE(due) = ?", dueDate)
+	}
+
+	// filter by due range
+	if dueFrom := c.Query("dueFrom"); dueFrom != "" {
+		query = query.Where("DATE(due) >= ?", dueFrom)
+	}
+	if dueTo := c.Query("dueTo"); dueTo != "" {
+		query = query.Where("DATE(due) <= ?", dueTo)
+	}
+
+	if err := query.Find(&todos).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	c.JSON(http.StatusOK, todos)
 }
 
