@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"math"
 	"net/http"
 	"strconv"
 	"time"
@@ -39,12 +40,34 @@ func GetTodos(c *gin.Context) {
 		query = query.Where("DATE(due) <= ?", dueTo)
 	}
 
-	if err := query.Find(&todos).Error; err != nil {
+	// pagination
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 10
+	}
+
+	offset := (page - 1) * limit
+
+	var total int64
+	query.Count(&total)
+
+	if err := query.Offset(offset).Limit(limit).Find(&todos).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, todos)
+	c.JSON(http.StatusOK, gin.H{
+		"data":       todos,
+		"page":       page,
+		"limit":      limit,
+		"total":      total,
+		"totalPages": int(math.Ceil(float64(total) / float64(limit))),
+	})
 }
 
 func CreateTodo(c *gin.Context) {
