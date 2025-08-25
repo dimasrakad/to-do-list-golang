@@ -114,7 +114,7 @@ func CreateTodo(c *gin.Context) {
 		Title       string `json:"title" binding:"required"`
 		Priority    string `json:"priority" binding:"oneof=low medium high"`
 		Description string `json:"description"`
-		Due         string `json:"due"`
+		Due         string `json:"due" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -150,16 +150,64 @@ func CreateTodo(c *gin.Context) {
 }
 
 func UpdateTodo(c *gin.Context) {
+	cfg := config.LoadConfig()
 	id, _ := strconv.Atoi(c.Param("id"))
-	var todo models.Todo
 
+	var input struct {
+		Title       *string `json:"title"`
+		Priority    *string `json:"priority" binding:"omitempty,oneof=low medium high"`
+		Status      *string `json:"status" binding:"omitempty,oneof='pending' 'in progress' 'done'"`
+		Description *string `json:"description"`
+		Due         *string `json:"due"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var todo models.Todo
 	if err := config.DB.First(&todo, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Todo not found"})
 		return
 	}
 
-	config.DB.Save(&todo)
-	c.JSON(http.StatusOK, todo)
+	if input.Title != nil {
+		todo.Title = *input.Title
+	}
+	if input.Priority != nil {
+		todo.Priority = *input.Priority
+	}
+	if input.Status != nil {
+		todo.Status = *input.Status
+	}
+	if input.Description != nil {
+		todo.Description = *input.Description
+	}
+
+	if input.Due != nil {
+		loc, _ := time.LoadLocation(cfg.AppLocation)
+		due, err := time.ParseInLocation("2006-01-02 15:04:05", *input.Due, loc)
+
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format. Use YYYY-MM-DD hh:mm:ss"})
+			return
+		}
+
+		if due.Before(time.Now()) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Due cannot be in the past"})
+			return
+		}
+
+		todo.Due = &due
+	}
+
+	if err := config.DB.Save(&todo).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": todo})
 }
 
 func DeleteTodo(c *gin.Context) {
