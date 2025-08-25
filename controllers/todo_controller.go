@@ -1,9 +1,11 @@
 package controllers
 
 import (
+	"fmt"
 	"math"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"to-do-list-golang/config"
@@ -38,6 +40,41 @@ func GetTodos(c *gin.Context) {
 	}
 	if dueTo := c.Query("dueTo"); dueTo != "" {
 		query = query.Where("DATE(due) <= ?", dueTo)
+	}
+
+	// sorting
+	sortBy := strings.Split(c.DefaultQuery("sortBy", "due"), ",")
+	orders := strings.Split(c.DefaultQuery("order", "asc"), ",")
+
+	for i, field := range sortBy {
+		field = strings.TrimSpace(field)
+
+		order := "asc"
+		if i < len(orders) {
+			if o := strings.ToLower(strings.TrimSpace(orders[i])); o == "desc" {
+				order = "desc"
+			}
+
+		}
+
+		switch field {
+		case "priority":
+			query = query.Order(fmt.Sprintf(`
+			CASE
+				WHEN priority = 'low' THEN 1
+				WHEN priority = 'medium' THEN 2
+				WHEN priority = 'high' THEN 3
+			END %s`, order))
+		case "status":
+			query = query.Order(fmt.Sprintf(`
+			CASE
+				WHEN status = 'pending' THEN 1
+				WHEN status = 'in progress' THEN 2
+				WHEN status = 'done' THEN 3
+			END %s`, order))
+		default:
+			query = query.Order(fmt.Sprintf("%s %s", field, order))
+		}
 	}
 
 	// pagination
@@ -109,7 +146,7 @@ func CreateTodo(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, todo)
+	c.JSON(http.StatusCreated, gin.H{"data": todo})
 }
 
 func UpdateTodo(c *gin.Context) {
