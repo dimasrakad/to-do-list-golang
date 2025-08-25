@@ -19,6 +19,11 @@ func GetTodos(c *gin.Context) {
 
 	query := config.DB.Model(&models.Todo{})
 
+	// search title
+	if search := c.Query("search"); search != "" {
+		query = query.Where("LOWER(title) LIKE ?", "%"+strings.ToLower(search)+"%")
+	}
+
 	// filter by status
 	if status := c.Query("status"); status != "" {
 		query = query.Where("status = ?", status)
