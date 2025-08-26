@@ -16,7 +16,7 @@ func main() {
 
 	// Connect DB
 	config.ConnectDatabase()
-	config.DB.AutoMigrate(&models.Todo{})
+	config.DB.AutoMigrate(&models.Category{}, &models.Todo{})
 
 	// Flag
 	seed := flag.Bool("seed", false, "run database seeder")
@@ -25,7 +25,9 @@ func main() {
 	flag.Parse()
 
 	if *seed {
-		cmd.Seed(*count, *truncate)
+		cmd.CategoryColorSeed()
+		cmd.CategorySeed()
+		cmd.TodoSeed(*count, *truncate)
 		return
 	}
 
@@ -34,6 +36,8 @@ func main() {
 
 	// Router
 	routes.TodoRoute(r)
+	routes.CategoryRoute(r)
+	routes.CategoryColorRoute(r)
 
 	// Run server
 	r.Run(":" + cfg.AppPort)

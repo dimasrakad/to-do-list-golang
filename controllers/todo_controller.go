@@ -12,6 +12,7 @@ import (
 	"to-do-list-golang/models"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func GetTodos(c *gin.Context) {
@@ -32,6 +33,11 @@ func GetTodos(c *gin.Context) {
 	// filter by priority
 	if priority := c.Query("priority"); priority != "" {
 		query = query.Where("priority = ?", priority)
+	}
+
+	// filter by category
+	if category := c.Query("category"); category != "" {
+		query = query.Joins("Category").Where("categories.name = ?", category)
 	}
 
 	// filter by due date
@@ -98,7 +104,7 @@ func GetTodos(c *gin.Context) {
 	var total int64
 	query.Count(&total)
 
-	if err := query.Offset(offset).Limit(limit).Find(&todos).Error; err != nil {
+	if err := todoWithRelations(query).Offset(offset).Limit(limit).Find(&todos).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -120,10 +126,18 @@ func CreateTodo(c *gin.Context) {
 		Priority    string `json:"priority" binding:"oneof=low medium high"`
 		Description string `json:"description"`
 		Due         string `json:"due" binding:"required"`
+		CategoryID  uint   `json:"categoryId"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var category models.Category
+
+	if err := config.DB.Model(&models.Category{}).Where("id = ?", input.CategoryID).First(&category).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "category not found"})
 		return
 	}
 
@@ -141,12 +155,18 @@ func CreateTodo(c *gin.Context) {
 	}
 
 	todo := models.Todo{
-		Title:    input.Title,
-		Priority: input.Priority,
-		Due:      &due,
+		Title:      input.Title,
+		Priority:   input.Priority,
+		Due:        &due,
+		CategoryID: input.CategoryID,
 	}
 
 	if err := config.DB.Create(&todo).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := todoWithRelations(config.DB).First(&todo, todo.ID).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -212,11 +232,22 @@ func UpdateTodo(c *gin.Context) {
 		return
 	}
 
+	if err := todoWithRelations(config.DB).First(&todo, todo.ID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"data": todo})
 }
 
 func DeleteTodo(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
+
+	var todo models.Todo
+	if err := config.DB.First(&todo, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Todo not found"})
+		return
+	}
 
 	if err := config.DB.Delete(&models.Todo{}, id).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete"})
@@ -224,4 +255,8 @@ func DeleteTodo(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Todo deleted"})
+}
+
+func todoWithRelations(db *gorm.DB) *gorm.DB {
+	return db.Preload("Category").Preload("Category.CategoryColor")
 }

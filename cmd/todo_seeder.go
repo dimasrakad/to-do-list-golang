@@ -10,9 +10,8 @@ import (
 	"github.com/go-faker/faker/v4"
 )
 
-func Seed(count int, truncate bool) {
+func TodoSeed(count int, truncate bool) {
 	cfg := config.LoadConfig()
-	config.ConnectDatabase()
 
 	statuses := []string{"pending", "in progress", "done"}
 	priorities := []string{"low", "medium", "high"}
@@ -42,6 +41,7 @@ func Seed(count int, truncate bool) {
 			Status:      statuses[rand.Intn(len(statuses))],
 			Priority:    priorities[rand.Intn(len(priorities))],
 			Due:         &due,
+			CategoryID:  uint(rand.Intn(4) + 1),
 		}
 
 		config.DB.Create(&todo)

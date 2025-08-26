@@ -8,6 +8,8 @@ type Todo struct {
 	Description string     `json:"description" gorm:"type:text"`
 	Status      string     `json:"status" gorm:"type:enum('pending','in progress','done');default:'pending'"`
 	Priority    string     `json:"priority" gorm:"type:enum('low','medium','high');default:'low'"`
+	CategoryID  uint       `json:"categoryId"` // foreign key
+	Category    Category   `json:"category" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	Due         *time.Time `json:"due"` // not null
 	CreatedAt   time.Time  `json:"createdAt"`
 	UpdatedAt   time.Time  `json:"updatedAt"`
