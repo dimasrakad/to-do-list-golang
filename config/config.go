@@ -16,6 +16,7 @@ type Config struct {
 	DBHost      string
 	DBPort      string
 	DBName      string
+	JWTKey      string
 }
 
 var (
@@ -40,6 +41,7 @@ func LoadConfig() *Config {
 			DBHost:      getEnv("DB_HOST", "127.0.0.1"),
 			DBPort:      getEnv("DB_PORT", "3306"),
 			DBName:      getEnv("DB_NAME", "to_do_list_golang"),
+			JWTKey:      getEnv("JWT_KEY", "example_jwt_key"),
 		}
 	})
 

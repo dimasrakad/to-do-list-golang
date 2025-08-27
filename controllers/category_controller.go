@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"to-do-list-golang/config"
 	"to-do-list-golang/models"
+	"to-do-list-golang/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,15 +24,7 @@ func CreateCategory(c *gin.Context) {
 		CategoryColorID uint   `json:"categoryColorId" binding:"required"`
 	}
 
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	var categoryColor models.CategoryColor
-
-	if err := config.DB.Model(&models.CategoryColor{}).Where("id = ?", input.CategoryColorID).First(&categoryColor).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Category color not found"})
+	if !utils.ValidateInput(c, &input) {
 		return
 	}
 
@@ -41,12 +34,12 @@ func CreateCategory(c *gin.Context) {
 	}
 
 	if err := config.DB.Create(&category).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.HandleDBError(c, err)
 		return
 	}
 
 	if err := config.DB.Preload("CategoryColor").First(&category, category.ID).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.HandleDBError(c, err)
 		return
 	}
 
@@ -61,14 +54,13 @@ func UpdateCategory(c *gin.Context) {
 		CategoryColorID *uint   `json:"categoryColorId"`
 	}
 
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if !utils.ValidateInput(c, &input) {
 		return
 	}
 
 	var category models.Category
 	if err := config.DB.First(&category, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Category not found"})
+		utils.HandleDBError(c, err)
 		return
 	}
 
@@ -76,23 +68,16 @@ func UpdateCategory(c *gin.Context) {
 		category.Name = *input.Name
 	}
 	if input.CategoryColorID != nil {
-		var categoryColor models.CategoryColor
-
-		if err := config.DB.Model(&models.CategoryColor{}).Where("id = ?", *input.CategoryColorID).First(&categoryColor).Error; err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Category color not found"})
-			return
-		}
-
 		category.CategoryColorID = *input.CategoryColorID
 	}
 
 	if err := config.DB.Save(&category).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.HandleDBError(c, err)
 		return
 	}
 
 	if err := config.DB.Preload("CategoryColor").First(&category, category.ID).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.HandleDBError(c, err)
 		return
 	}
 
@@ -104,7 +89,7 @@ func DeleteCategory(c *gin.Context) {
 
 	var category models.Category
 	if err := config.DB.First(&category, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Category not found"})
+		utils.HandleDBError(c, err)
 		return
 	}
 

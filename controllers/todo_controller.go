@@ -10,6 +10,7 @@ import (
 
 	"to-do-list-golang/config"
 	"to-do-list-golang/models"
+	"to-do-list-golang/utils"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -105,7 +106,7 @@ func GetTodos(c *gin.Context) {
 	query.Count(&total)
 
 	if err := todoWithRelations(query).Offset(offset).Limit(limit).Find(&todos).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.HandleDBError(c, err)
 		return
 	}
 
@@ -129,15 +130,7 @@ func CreateTodo(c *gin.Context) {
 		CategoryID  uint   `json:"categoryId"`
 	}
 
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	var category models.Category
-
-	if err := config.DB.Model(&models.Category{}).Where("id = ?", input.CategoryID).First(&category).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "category not found"})
+	if !utils.ValidateInput(c, &input) {
 		return
 	}
 
@@ -162,12 +155,12 @@ func CreateTodo(c *gin.Context) {
 	}
 
 	if err := config.DB.Create(&todo).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.HandleDBError(c, err)
 		return
 	}
 
 	if err := todoWithRelations(config.DB).First(&todo, todo.ID).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.HandleDBError(c, err)
 		return
 	}
 
@@ -186,14 +179,13 @@ func UpdateTodo(c *gin.Context) {
 		Due         *string `json:"due"`
 	}
 
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if !utils.ValidateInput(c, &input) {
 		return
 	}
 
 	var todo models.Todo
 	if err := config.DB.First(&todo, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Todo not found"})
+		utils.HandleDBError(c, err)
 		return
 	}
 
@@ -228,12 +220,12 @@ func UpdateTodo(c *gin.Context) {
 	}
 
 	if err := config.DB.Save(&todo).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.HandleDBError(c, err)
 		return
 	}
 
 	if err := todoWithRelations(config.DB).First(&todo, todo.ID).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.HandleDBError(c, err)
 		return
 	}
 
@@ -245,7 +237,7 @@ func DeleteTodo(c *gin.Context) {
 
 	var todo models.Todo
 	if err := config.DB.First(&todo, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Todo not found"})
+		utils.HandleDBError(c, err)
 		return
 	}
 
