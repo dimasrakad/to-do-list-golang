@@ -17,7 +17,13 @@ func main() {
 
 	// Connect DB
 	config.ConnectDatabase()
-	config.DB.AutoMigrate(&models.Category{}, &models.Todo{}, &models.CategoryColor{}, &models.User{})
+	config.DB.AutoMigrate(
+		&models.Category{},
+		&models.Todo{},
+		&models.CategoryColor{},
+		&models.User{},
+		&models.RefreshToken{},
+	)
 
 	// Flag
 	// seed := flag.Bool("seed", false, "run database seeder")

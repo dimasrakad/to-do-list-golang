@@ -29,7 +29,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		claims := &utils.Claims{}
 
 		token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (any, error) {
-			return utils.JwtKey, nil
+			return utils.AccessSecret, nil
 		})
 
 		if err != nil || !token.Valid {
