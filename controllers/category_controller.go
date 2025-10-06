@@ -8,12 +8,18 @@ import (
 	"to-do-list-golang/utils"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func GetCategories(c *gin.Context) {
 	var categories []models.Category
 
-	config.DB.Model(&models.Category{}).Find(&categories)
+	query := config.DB.Model(&models.Category{})
+
+	if err := categoryWithRelations(query).Find(&categories).Error; err != nil {
+		utils.HandleDBError(c, err)
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"data": categories})
 }
@@ -99,4 +105,8 @@ func DeleteCategory(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Category deleted"})
+}
+
+func categoryWithRelations(db *gorm.DB) *gorm.DB {
+	return db.Preload("CategoryColor")
 }
