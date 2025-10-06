@@ -2,14 +2,14 @@ package routes
 
 import (
 	"to-do-list-golang/controllers"
-	"to-do-list-golang/middleware"
+	"to-do-list-golang/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
 
 func CategoryRoute(r *gin.Engine) {
 	categories := r.Group("/categories")
-	categories.Use(middleware.AuthMiddleware())
+	categories.Use(middlewares.AuthMiddleware())
 	{
 		categories.GET("", controllers.GetCategories)
 		categories.POST("", controllers.CreateCategory)

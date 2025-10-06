@@ -2,14 +2,14 @@ package routes
 
 import (
 	"to-do-list-golang/controllers"
-	"to-do-list-golang/middleware"
+	"to-do-list-golang/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
 
 func TodoRoute(r *gin.Engine) {
 	todos := r.Group("/todos")
-	todos.Use(middleware.AuthMiddleware())
+	todos.Use(middlewares.AuthMiddleware())
 	{
 		todos.GET("", controllers.GetTodos)
 		todos.POST("", controllers.CreateTodo)

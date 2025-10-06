@@ -2,6 +2,7 @@ package main
 
 import (
 	"to-do-list-golang/config"
+	"to-do-list-golang/goroutines"
 	"to-do-list-golang/models"
 	"to-do-list-golang/routes"
 	"to-do-list-golang/validators"
@@ -25,6 +26,8 @@ func main() {
 		&models.RefreshToken{},
 		&models.RevokedToken{},
 	)
+
+	goroutines.StartTokenCleanup()
 
 	// Flag
 	// seed := flag.Bool("seed", false, "run database seeder")

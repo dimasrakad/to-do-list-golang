@@ -2,7 +2,7 @@ package routes
 
 import (
 	"to-do-list-golang/controllers"
-	"to-do-list-golang/middleware"
+	"to-do-list-golang/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,6 +13,6 @@ func AuthRoute(r *gin.Engine) {
 		auths.POST("/register", controllers.Register)
 		auths.POST("/login", controllers.Login)
 		auths.POST("/refresh", controllers.RefreshToken)
-		auths.POST("/logout", middleware.AuthMiddleware(), controllers.Logout)
+		auths.POST("/logout", middlewares.AuthMiddleware(), controllers.Logout)
 	}
 }
