@@ -23,6 +23,7 @@ func main() {
 		&models.CategoryColor{},
 		&models.User{},
 		&models.RefreshToken{},
+		&models.RevokedToken{},
 	)
 
 	// Flag

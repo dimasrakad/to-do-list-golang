@@ -3,6 +3,9 @@ package middleware
 import (
 	"net/http"
 	"strings"
+	"time"
+	"to-do-list-golang/config"
+	"to-do-list-golang/models"
 	"to-do-list-golang/utils"
 
 	"github.com/gin-gonic/gin"
@@ -26,6 +29,14 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		tokenStr := parts[1]
+
+		var revoked models.RevokedToken
+		if err := config.DB.Where("token = ?", tokenStr).First(&revoked).Error; err == nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token revoked"})
+			c.Abort()
+			return
+		}
+
 		claims := &utils.Claims{}
 
 		token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (any, error) {
@@ -38,7 +49,15 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		if claims.ExpiresAt.Time.Before(time.Now()) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token expired"})
+			c.Abort()
+			return
+		}
+
 		c.Set("userId", claims.UserID)
+		c.Set("tokenString", tokenStr)
+		c.Set("claims", claims)
 		c.Next()
 	}
 }

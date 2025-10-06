@@ -84,7 +84,9 @@ func Login(c *gin.Context) {
 	})
 }
 
-func RefreshAccessToken(c *gin.Context) {
+func RefreshToken(c *gin.Context) {
+	cfg := config.LoadConfig()
+
 	var input struct {
 		RefreshToken string `json:"refreshToken" binding:"required"`
 	}
@@ -93,27 +95,31 @@ func RefreshAccessToken(c *gin.Context) {
 		return
 	}
 
-	token, err := jwt.Parse(input.RefreshToken, func(token *jwt.Token) (any, error) {
+	claims := &utils.Claims{}
+	token, err := jwt.ParseWithClaims(input.RefreshToken, claims, func(token *jwt.Token) (any, error) {
 		return utils.RefreshSecret, nil
 	})
 
 	if err != nil || !token.Valid {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token"})
+		return
 	}
 
-	claims := token.Claims.(jwt.MapClaims)
-	userID := uint(claims["user_id"].(float64))
+	userID := claims.UserID
 
 	var refreshToken models.RefreshToken
-	if err := config.DB.Where("user_id = ? AND token = ?", userID, input.RefreshToken); err != nil {
+	if err := config.DB.Where("user_id = ? AND token = ?", userID, input.RefreshToken).First(&refreshToken).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token not found"})
 		return
 	}
 
 	if refreshToken.ExpiresAt.Before(time.Now()) {
+		config.DB.Delete(&refreshToken)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "refresh token expired"})
 		return
 	}
+
+	config.DB.Delete(&refreshToken)
 
 	newAccessToken, err := utils.GenerateAccessToken(userID)
 	if err != nil {
@@ -121,8 +127,52 @@ func RefreshAccessToken(c *gin.Context) {
 		return
 	}
 
+	newRefreshToken, err := utils.GenerateRefreshToken(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate new refresh token\n" + err.Error()})
+		return
+	}
+
+	expMinutes, _ := time.ParseDuration(cfg.JWTRefreshExpire + "m")
+
+	newToken := models.RefreshToken{
+		UserID:    userID,
+		Token:     newRefreshToken,
+		ExpiresAt: time.Now().Add(expMinutes),
+	}
+
+	config.DB.Create(&newToken)
+
 	c.JSON(http.StatusOK, gin.H{
 		"accessToken":  newAccessToken,
-		"refreshToken": input.RefreshToken,
+		"refreshToken": newRefreshToken,
 	})
+}
+
+func Logout(c *gin.Context) {
+	userId, userIdExists := c.Get("userId") // from JWT claims
+	tokenString, tokenStringExists := c.Get("tokenString")
+	claims, claimsExists := c.Get("claims")
+
+	if !userIdExists || !tokenStringExists || !claimsExists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	if err := config.DB.Where("user_id = ?", userId).Delete(&models.RefreshToken{}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to logout\n" + err.Error()})
+		return
+	}
+
+	expTime := claims.(*utils.Claims).ExpiresAt.Time
+
+	revoked := models.RevokedToken{
+		Token:     tokenString.(string),
+		UserID:    userId.(uint),
+		ExpiresAt: expTime,
+	}
+
+	config.DB.Create(&revoked)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Logout success"})
 }
