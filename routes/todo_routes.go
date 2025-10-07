@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func TodoRoute(r *gin.Engine) {
+func TodoRoute(r *gin.RouterGroup) {
 	todos := r.Group("/todos")
 	todos.Use(middlewares.AuthMiddleware())
 	{

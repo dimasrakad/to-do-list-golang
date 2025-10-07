@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func CategoryRoute(r *gin.Engine) {
+func CategoryRoute(r *gin.RouterGroup) {
 	categories := r.Group("/categories")
 	categories.Use(middlewares.AuthMiddleware())
 	{

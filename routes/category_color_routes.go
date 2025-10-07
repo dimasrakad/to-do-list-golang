@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func CategoryColorRoute(r *gin.Engine) {
+func CategoryColorRoute(r *gin.RouterGroup) {
 	colors := r.Group("/category-colors")
 	colors.Use(middlewares.AuthMiddleware())
 	{
