@@ -1,0 +1,611 @@
+basePath: /api/v1
+definitions:
+  dtos.CreateCategoryRequest:
+    properties:
+      categoryColorId:
+        type: integer
+      name:
+        type: string
+    required:
+    - categoryColorId
+    - name
+    type: object
+  dtos.CreateTodoRequest:
+    properties:
+      categoryId:
+        type: integer
+      description:
+        type: string
+      due:
+        type: string
+      priority:
+        enum:
+        - low
+        - medium
+        - high
+        type: string
+      title:
+        type: string
+    required:
+    - due
+    - title
+    type: object
+  dtos.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  dtos.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  dtos.RefreshTokenRequest:
+    properties:
+      refreshToken:
+        type: string
+    required:
+    - refreshToken
+    type: object
+  dtos.RegisterRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+  dtos.SuccessResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+    type: object
+  dtos.TokenResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  dtos.UpdateCategoryRequest:
+    properties:
+      categoryColorId:
+        type: integer
+      name:
+        type: string
+    type: object
+  dtos.UpdateTodoRequest:
+    properties:
+      description:
+        type: string
+      due:
+        type: string
+      priority:
+        enum:
+        - low
+        - medium
+        - high
+        type: string
+      status:
+        enum:
+        - pending
+        - in progress
+        - done
+        type: string
+      title:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: dimasdewanggana@gmail.com
+    name: Dimas Raka Dewanggana
+  description: This is a simple To Do List API server using Golang.
+  termsOfService: http://swagger.io/terms/
+  title: To Do List API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Login with email and password to receive access and refresh tokens
+      parameters:
+      - description: Login input
+        in: body
+        name: Payload
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: Login
+      tags:
+      - Auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Logout user by revoking the current access token and deleting the
+        refresh token
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: Logout
+      tags:
+      - Auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Refresh access token & refresh token using a valid refresh token
+      parameters:
+      - description: Refresh token input
+        in: body
+        name: Payload
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: Refresh token
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with name, email, and password
+      parameters:
+      - description: Register input
+        in: body
+        name: Payload
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dtos.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: Register a new user
+      tags:
+      - Auth
+  /categories:
+    delete:
+      consumes:
+      - application/json
+      description: Delete existing todo category
+      parameters:
+      - description: Category id
+        in: path
+        name: ID
+        required: true
+        type: integer
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: '"Delete Category"'
+      tags:
+      - Category
+    get:
+      consumes:
+      - application/json
+      description: Get all todo categories
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: '"Get Categories"'
+      tags:
+      - Category
+    patch:
+      consumes:
+      - application/json
+      description: Update existing todo category
+      parameters:
+      - description: Category id
+        in: path
+        name: ID
+        required: true
+        type: integer
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Update category input
+        in: body
+        name: Payload
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: '"Update Category"'
+      tags:
+      - Category
+    post:
+      consumes:
+      - application/json
+      description: Create new todo category
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Create category input
+        in: body
+        name: Payload
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dtos.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: '"Create Category"'
+      tags:
+      - Category
+  /category-colors:
+    get:
+      consumes:
+      - application/json
+      description: Get all category colors
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.SuccessResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: '"Get Category Colors"'
+      tags:
+      - Category
+  /todos:
+    delete:
+      consumes:
+      - application/json
+      description: Delete existing todo
+      parameters:
+      - description: Todo id
+        in: path
+        name: ID
+        required: true
+        type: integer
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: '"Delete Todo"'
+      tags:
+      - Todo
+    get:
+      consumes:
+      - application/json
+      description: Get all todos
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Todo search filter
+        in: query
+        name: search
+        required: true
+        type: string
+      - description: Todo status filter
+        in: query
+        name: status
+        required: true
+        type: string
+      - description: Todo priority filter
+        in: query
+        name: priority
+        required: true
+        type: string
+      - description: Todo category filter
+        in: query
+        name: category
+        required: true
+        type: string
+      - description: Todo due date filter
+        in: query
+        name: dueDate
+        required: true
+        type: string
+      - description: Todo due from filter
+        in: query
+        name: dueFrom
+        required: true
+        type: string
+      - description: Todo due to filter
+        in: query
+        name: dueTo
+        required: true
+        type: string
+      - description: Sort todo by field(s)
+        in: query
+        name: sortBy
+        required: true
+        type: string
+      - description: Order sort by asc/desc
+        in: query
+        name: order
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: '"Get Todos"'
+      tags:
+      - Todo
+    patch:
+      consumes:
+      - application/json
+      description: Update existing todo
+      parameters:
+      - description: Todo id
+        in: path
+        name: ID
+        required: true
+        type: integer
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Update todo input
+        in: body
+        name: Payload
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdateTodoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: '"Update Todo"'
+      tags:
+      - Todo
+    post:
+      consumes:
+      - application/json
+      description: Create new todo
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Create category input
+        in: body
+        name: Payload
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateTodoRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dtos.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: '"Create Todo"'
+      tags:
+      - Todo
+swagger: "2.0"

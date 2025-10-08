@@ -5,12 +5,24 @@ import (
 	"strconv"
 	"to-do-list-golang/config"
 	"to-do-list-golang/models"
+	"to-do-list-golang/models/dtos"
 	"to-do-list-golang/utils"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
+// "Get Categories" godoc
+// @Summary "Get Categories"
+// @Description Get all todo categories
+// @Tags Category
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer token"
+// @Success 200 {object} dtos.SuccessResponse
+// @Failure 401 {object} dtos.ErrorResponse
+// @Failure 500 {object} dtos.ErrorResponse
+// @Router /categories [get]
 func GetCategories(c *gin.Context) {
 	var categories []models.Category
 
@@ -21,14 +33,28 @@ func GetCategories(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": categories})
+	res := dtos.SuccessResponse{
+		Data:    categories,
+		Message: "",
+	}
+	c.JSON(http.StatusOK, res)
 }
 
+// "Create Category" godoc
+// @Summary "Create Category"
+// @Description Create new todo category
+// @Tags Category
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer token"
+// @Param Payload body dtos.CreateCategoryRequest true "Create category input"
+// @Success 201 {object} dtos.SuccessResponse
+// @Failure 400 {object} dtos.ErrorResponse
+// @Failure 401 {object} dtos.ErrorResponse
+// @Failure 500 {object} dtos.ErrorResponse
+// @Router /categories [post]
 func CreateCategory(c *gin.Context) {
-	var input struct {
-		Name            string `json:"name" binding:"required"`
-		CategoryColorID uint   `json:"categoryColorId" binding:"required"`
-	}
+	var input dtos.CreateCategoryRequest
 
 	if !utils.ValidateInput(c, &input) {
 		return
@@ -49,16 +75,31 @@ func CreateCategory(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"data": category})
+	res := dtos.SuccessResponse{
+		Data:    category,
+		Message: "",
+	}
+	c.JSON(http.StatusCreated, res)
 }
 
+// "Update Category" godoc
+// @Summary "Update Category"
+// @Description Update existing todo category
+// @Tags Category
+// @Accept json
+// @Produce json
+// @Param ID path uint true "Category id"
+// @Param Authorization header string true "Bearer token"
+// @Param Payload body dtos.UpdateCategoryRequest true "Update category input"
+// @Success 200 {object} dtos.SuccessResponse
+// @Failure 400 {object} dtos.ErrorResponse
+// @Failure 401 {object} dtos.ErrorResponse
+// @Failure 500 {object} dtos.ErrorResponse
+// @Router /categories [patch]
 func UpdateCategory(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 
-	var input struct {
-		Name            *string `json:"name"`
-		CategoryColorID *uint   `json:"categoryColorId"`
-	}
+	var input dtos.UpdateCategoryRequest
 
 	if !utils.ValidateInput(c, &input) {
 		return
@@ -87,9 +128,26 @@ func UpdateCategory(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": category})
+	res := dtos.SuccessResponse{
+		Data:    category,
+		Message: "",
+	}
+	c.JSON(http.StatusOK, res)
 }
 
+// "Delete Category" godoc
+// @Summary "Delete Category"
+// @Description Delete existing todo category
+// @Tags Category
+// @Accept json
+// @Produce json
+// @Param ID path uint true "Category id"
+// @Param Authorization header string true "Bearer token"
+// @Success 200 {object} dtos.SuccessResponse
+// @Failure 401 {object} dtos.ErrorResponse
+// @Failure 404 {object} dtos.ErrorResponse
+// @Failure 500 {object} dtos.ErrorResponse
+// @Router /categories [delete]
 func DeleteCategory(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 
@@ -104,7 +162,11 @@ func DeleteCategory(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Category deleted"})
+	res := dtos.SuccessResponse{
+		Data:    nil,
+		Message: "Category deleted",
+	}
+	c.JSON(http.StatusOK, res)
 }
 
 func categoryWithRelations(db *gorm.DB) *gorm.DB {

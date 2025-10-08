@@ -2,10 +2,10 @@ package utils
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
+	"to-do-list-golang/models/dtos"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-sql-driver/mysql"
@@ -13,9 +13,11 @@ import (
 )
 
 func HandleDBError(c *gin.Context, err error) {
+	res := dtos.ErrorResponse{}
+
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		fmt.Println(err.Error())
-		c.JSON(http.StatusNotFound, gin.H{"error": "Data not found"})
+		res.Error = "Data not found"
+		c.JSON(http.StatusNotFound, res)
 		return
 	}
 
@@ -32,7 +34,8 @@ func HandleDBError(c *gin.Context, err error) {
 				column = parts[len(parts)-1]
 			}
 
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Column " + column + " already exists, there cannot be duplicates"})
+			res.Error = "Column " + column + " already exists, there cannot be duplicates"
+			c.JSON(http.StatusBadRequest, res)
 			return
 		case 1452: // Cannot add or update a child row: foreign key constraint fails
 			re := regexp.MustCompile(`FOREIGN KEY \(` + "`(.+?)`" + `\)`)
@@ -43,7 +46,8 @@ func HandleDBError(c *gin.Context, err error) {
 				column = matches[1]
 			}
 
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Related data not found for column " + column + " (foreign key violation)"})
+			res.Error = "Related data not found for column " + column + " (foreign key violation)"
+			c.JSON(http.StatusBadRequest, res)
 			return
 		case 1048: // Column cannot be null
 			re := regexp.MustCompile(`Column '(.+?)'`)
@@ -54,10 +58,12 @@ func HandleDBError(c *gin.Context, err error) {
 				column = matches[1]
 			}
 
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Required field " + column})
+			res.Error = "Required field " + column
+			c.JSON(http.StatusBadRequest, res)
 			return
 		}
 	}
 
-	c.JSON(http.StatusInternalServerError, gin.H{"error": "An internal server error occurred\n" + err.Error()})
+	res.Error = "An internal server error occurred\n" + err.Error()
+	c.JSON(http.StatusInternalServerError, res)
 }

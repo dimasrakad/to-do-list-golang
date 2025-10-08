@@ -10,12 +10,33 @@ import (
 
 	"to-do-list-golang/config"
 	"to-do-list-golang/models"
+	"to-do-list-golang/models/dtos"
 	"to-do-list-golang/utils"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
+// "Get Todos" godoc
+// @Summary "Get Todos"
+// @Description Get all todos
+// @Tags Todo
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer token"
+// @Param search query string true "Todo search filter"
+// @Param status query string true "Todo status filter"
+// @Param priority query string true "Todo priority filter"
+// @Param category query string true "Todo category filter"
+// @Param dueDate query string true "Todo due date filter"
+// @Param dueFrom query string true "Todo due from filter"
+// @Param dueTo query string true "Todo due to filter"
+// @Param sortBy query string true "Sort todo by field(s)"
+// @Param order query string true "Order sort by asc/desc"
+// @Success 200 {object} dtos.SuccessResponse
+// @Failure 401 {object} dtos.ErrorResponse
+// @Failure 500 {object} dtos.ErrorResponse
+// @Router /todos [get]
 func GetTodos(c *gin.Context) {
 	var todos []models.Todo
 
@@ -110,25 +131,34 @@ func GetTodos(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"data":       todos,
-		"page":       page,
-		"limit":      limit,
-		"total":      total,
-		"totalPages": int(math.Ceil(float64(total) / float64(limit))),
-	})
+	res := dtos.PaginationResponse{
+		Data:       todos,
+		Page:       page,
+		Limit:      limit,
+		Total:      total,
+		TotalPages: int(math.Ceil(float64(total) / float64(limit))),
+	}
+	c.JSON(http.StatusOK, res)
 }
 
+// "Create Todo" godoc
+// @Summary "Create Todo"
+// @Description Create new todo
+// @Tags Todo
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer token"
+// @Param Payload body dtos.CreateTodoRequest true "Create category input"
+// @Success 201 {object} dtos.SuccessResponse
+// @Failure 400 {object} dtos.ErrorResponse
+// @Failure 401 {object} dtos.ErrorResponse
+// @Failure 500 {object} dtos.ErrorResponse
+// @Router /todos [post]
 func CreateTodo(c *gin.Context) {
 	cfg := config.LoadConfig()
+	var res any
 
-	var input struct {
-		Title       string `json:"title" binding:"required"`
-		Priority    string `json:"priority" binding:"oneof=low medium high"`
-		Description string `json:"description"`
-		Due         string `json:"due" binding:"required"`
-		CategoryID  uint   `json:"categoryId"`
-	}
+	var input dtos.CreateTodoRequest
 
 	if !utils.ValidateInput(c, &input) {
 		return
@@ -138,12 +168,18 @@ func CreateTodo(c *gin.Context) {
 	due, err := time.ParseInLocation("2006-01-02 15:04:05", input.Due, loc)
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format. Use YYYY-MM-DD hh:mm:ss"})
+		res = dtos.ErrorResponse{
+			Error: "Invalid date format. Use YYYY-MM-DD hh:mm:ss",
+		}
+		c.JSON(http.StatusBadRequest, res)
 		return
 	}
 
 	if due.Before(time.Now()) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Due cannot be in the past"})
+		res = dtos.ErrorResponse{
+			Error: "Due cannot be in the past",
+		}
+		c.JSON(http.StatusBadRequest, res)
 		return
 	}
 
@@ -164,20 +200,33 @@ func CreateTodo(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"data": todo})
+	res = dtos.SuccessResponse{
+		Data:    todo,
+		Message: "",
+	}
+	c.JSON(http.StatusCreated, res)
 }
 
+// "Update Todo" godoc
+// @Summary "Update Todo"
+// @Description Update existing todo
+// @Tags Todo
+// @Accept json
+// @Produce json
+// @Param ID path uint true "Todo id"
+// @Param Authorization header string true "Bearer token"
+// @Param Payload body dtos.UpdateTodoRequest true "Update todo input"
+// @Success 200 {object} dtos.SuccessResponse
+// @Failure 400 {object} dtos.ErrorResponse
+// @Failure 401 {object} dtos.ErrorResponse
+// @Failure 500 {object} dtos.ErrorResponse
+// @Router /todos [patch]
 func UpdateTodo(c *gin.Context) {
 	cfg := config.LoadConfig()
 	id, _ := strconv.Atoi(c.Param("id"))
+	var res any
 
-	var input struct {
-		Title       *string `json:"title"`
-		Priority    *string `json:"priority" binding:"omitempty,oneof=low medium high"`
-		Status      *string `json:"status" binding:"omitempty,oneof='pending' 'in progress' 'done'"`
-		Description *string `json:"description"`
-		Due         *string `json:"due"`
-	}
+	var input dtos.UpdateTodoRequest
 
 	if !utils.ValidateInput(c, &input) {
 		return
@@ -207,12 +256,18 @@ func UpdateTodo(c *gin.Context) {
 		due, err := time.ParseInLocation("2006-01-02 15:04:05", *input.Due, loc)
 
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format. Use YYYY-MM-DD hh:mm:ss"})
+			res := dtos.ErrorResponse{
+				Error: "Invalid date format. Use YYYY-MM-DD hh:mm:ss",
+			}
+			c.JSON(http.StatusBadRequest, res)
 			return
 		}
 
 		if due.Before(time.Now()) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Due cannot be in the past"})
+			res := dtos.ErrorResponse{
+				Error: "Due cannot be in the past",
+			}
+			c.JSON(http.StatusBadRequest, res)
 			return
 		}
 
@@ -229,9 +284,26 @@ func UpdateTodo(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": todo})
+	res = dtos.SuccessResponse{
+		Data:    todo,
+		Message: "",
+	}
+	c.JSON(http.StatusOK, res)
 }
 
+// "Delete Todo" godoc
+// @Summary "Delete Todo"
+// @Description Delete existing todo
+// @Tags Todo
+// @Accept json
+// @Produce json
+// @Param ID path uint true "Todo id"
+// @Param Authorization header string true "Bearer token"
+// @Success 200 {object} dtos.SuccessResponse
+// @Failure 401 {object} dtos.ErrorResponse
+// @Failure 404 {object} dtos.ErrorResponse
+// @Failure 500 {object} dtos.ErrorResponse
+// @Router /todos [delete]
 func DeleteTodo(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 
@@ -246,7 +318,11 @@ func DeleteTodo(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Todo deleted"})
+	res := dtos.SuccessResponse{
+		Data:    nil,
+		Message: "Todo deleted",
+	}
+	c.JSON(http.StatusOK, res)
 }
 
 func todoWithRelations(db *gorm.DB) *gorm.DB {

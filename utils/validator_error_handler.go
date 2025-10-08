@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"to-do-list-golang/models/dtos"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -12,6 +13,7 @@ import (
 func ValidateInput(c *gin.Context, input any) bool {
 	if err := c.ShouldBindJSON(input); err != nil {
 		var validationError validator.ValidationErrors
+		res := dtos.ErrorResponse{}
 
 		if errors.As(err, &validationError) {
 			out := ""
@@ -25,9 +27,12 @@ func ValidateInput(c *gin.Context, input any) bool {
 					out += ValidationErrorToText(fieldError)
 				}
 			}
-			c.JSON(http.StatusBadRequest, gin.H{"error": out})
+
+			res.Error = out
+			c.JSON(http.StatusBadRequest, res)
 		} else {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			res.Error = err.Error()
+			c.JSON(http.StatusBadRequest, res)
 		}
 		return false
 	}

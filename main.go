@@ -2,6 +2,7 @@ package main
 
 import (
 	"to-do-list-golang/config"
+	_ "to-do-list-golang/docs"
 	"to-do-list-golang/goroutines"
 	"to-do-list-golang/models"
 	"to-do-list-golang/routes"
@@ -10,7 +11,20 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
+
+// @title To Do List API
+// @version 1.0
+// @description This is a simple To Do List API server using Golang.
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name Dimas Raka Dewanggana
+// @contact.email dimasdewanggana@gmail.com
+
+// @host localhost:8080
+// @BasePath /api/v1
 
 func main() {
 	// Load config
@@ -52,6 +66,9 @@ func main() {
 	if validator, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		validator.RegisterValidation("password", validators.PasswordValidator)
 	}
+
+	// Swagger
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Run server
 	r.Run(":" + cfg.AppPort)

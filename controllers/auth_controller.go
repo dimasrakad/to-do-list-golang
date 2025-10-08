@@ -6,18 +6,26 @@ import (
 	"time"
 	"to-do-list-golang/config"
 	"to-do-list-golang/models"
+	"to-do-list-golang/models/dtos"
 	"to-do-list-golang/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// Register godoc
+// @Summary Register a new user
+// @Description Register a new user with name, email, and password
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param Payload body dtos.RegisterRequest true "Register input"
+// @Success 201 {object} dtos.SuccessResponse
+// @Failure 400 {object} dtos.ErrorResponse
+// @Failure 500 {object} dtos.ErrorResponse
+// @Router /auth/register [post]
 func Register(c *gin.Context) {
-	var input struct {
-		Name     string `json:"name" binding:"required"`
-		Email    string `json:"email" binding:"required,email"`
-		Password string `json:"password" binding:"required,password"`
-	}
+	var input dtos.RegisterRequest
 
 	if !utils.ValidateInput(c, &input) {
 		return
@@ -36,16 +44,31 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"data": user})
+	res := dtos.SuccessResponse{
+		Data:    user,
+		Message: "",
+	}
+
+	c.JSON(http.StatusCreated, res)
 }
 
+// Login godoc
+// @Summary Login
+// @Description Login with email and password to receive access and refresh tokens
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param Payload body dtos.LoginRequest true "Login input"
+// @Success 200 {object} dtos.TokenResponse
+// @Failure 400 {object} dtos.ErrorResponse
+// @Failure 401 {object} dtos.ErrorResponse
+// @Failure 500 {object} dtos.ErrorResponse
+// @Router /auth/login [post]
 func Login(c *gin.Context) {
 	cfg := config.LoadConfig()
+	var res any
 
-	var input struct {
-		Email    string `json:"email" binding:"required,email"`
-		Password string `json:"password" binding:"required"`
-	}
+	var input dtos.LoginRequest
 
 	if !utils.ValidateInput(c, &input) {
 		return
@@ -53,12 +76,18 @@ func Login(c *gin.Context) {
 
 	var user models.User
 	if err := config.DB.Where("email = ?", input.Email).First(&user).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+		res = dtos.ErrorResponse{
+			Error: "Invalid email or password",
+		}
+		c.JSON(http.StatusUnauthorized, res)
 		return
 	}
 
 	if !utils.CheckPasswordHash(input.Password, user.Password) {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+		res = dtos.ErrorResponse{
+			Error: "Invalid email or password",
+		}
+		c.JSON(http.StatusUnauthorized, res)
 		return
 	}
 
@@ -74,22 +103,38 @@ func Login(c *gin.Context) {
 	}
 
 	if err := config.DB.Create(&refreshTokenDB).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not save refresh token\n" + err.Error()})
+		res = dtos.ErrorResponse{
+			Error: "Could not save refresh token\n" + err.Error(),
+		}
+		c.JSON(http.StatusInternalServerError, res)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
-	})
+	res = dtos.TokenResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}
+	c.JSON(http.StatusOK, res)
 }
 
+// Refresh Token godoc
+// @Summary Refresh token
+// @Description Refresh access token & refresh token using a valid refresh token
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param Payload body dtos.RefreshTokenRequest true "Refresh token input"
+// @Success 200 {object} dtos.TokenResponse
+// @Failure 400 {object} dtos.ErrorResponse
+// @Failure 401 {object} dtos.ErrorResponse
+// @Failure 500 {object} dtos.ErrorResponse
+// @Router /auth/refresh [post]
 func RefreshToken(c *gin.Context) {
 	cfg := config.LoadConfig()
 
-	var input struct {
-		RefreshToken string `json:"refreshToken" binding:"required"`
-	}
+	var res any
+
+	var input dtos.RefreshTokenRequest
 
 	if !utils.ValidateInput(c, &input) {
 		return
@@ -101,7 +146,10 @@ func RefreshToken(c *gin.Context) {
 	})
 
 	if err != nil || !token.Valid {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token"})
+		res = dtos.ErrorResponse{
+			Error: "Invalid refresh token",
+		}
+		c.JSON(http.StatusUnauthorized, res)
 		return
 	}
 
@@ -109,13 +157,19 @@ func RefreshToken(c *gin.Context) {
 
 	var refreshToken models.RefreshToken
 	if err := config.DB.Where("user_id = ? AND token = ?", userID, input.RefreshToken).First(&refreshToken).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token not found"})
+		res = dtos.ErrorResponse{
+			Error: "Refresh token not found",
+		}
+		c.JSON(http.StatusUnauthorized, res)
 		return
 	}
 
 	if refreshToken.ExpiresAt.Before(time.Now()) {
 		config.DB.Delete(&refreshToken)
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "refresh token expired"})
+		res = dtos.ErrorResponse{
+			Error: "Refresh token expired",
+		}
+		c.JSON(http.StatusUnauthorized, res)
 		return
 	}
 
@@ -123,13 +177,19 @@ func RefreshToken(c *gin.Context) {
 
 	newAccessToken, err := utils.GenerateAccessToken(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate new access token\n" + err.Error()})
+		res = dtos.ErrorResponse{
+			Error: "Could not generate new access token\n" + err.Error(),
+		}
+		c.JSON(http.StatusInternalServerError, res)
 		return
 	}
 
 	newRefreshToken, err := utils.GenerateRefreshToken(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate new refresh token\n" + err.Error()})
+		res = dtos.ErrorResponse{
+			Error: "Could not generate new refresh token\n" + err.Error(),
+		}
+		c.JSON(http.StatusInternalServerError, res)
 		return
 	}
 
@@ -143,24 +203,43 @@ func RefreshToken(c *gin.Context) {
 
 	config.DB.Create(&newToken)
 
-	c.JSON(http.StatusOK, gin.H{
-		"accessToken":  newAccessToken,
-		"refreshToken": newRefreshToken,
-	})
+	res = dtos.TokenResponse{
+		AccessToken:  newAccessToken,
+		RefreshToken: newRefreshToken,
+	}
+	c.JSON(http.StatusOK, res)
 }
 
+// Logout godoc
+// @Summary Logout
+// @Description Logout user by revoking the current access token and deleting the refresh token
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer token"
+// @Success 200 {object} dtos.SuccessResponse
+// @Failure 401 {object} dtos.ErrorResponse
+// @Failure 500 {object} dtos.ErrorResponse
+// @Router /auth/logout [post]
 func Logout(c *gin.Context) {
 	userId, userIdExists := c.Get("userId") // from JWT claims
 	tokenString, tokenStringExists := c.Get("tokenString")
 	claims, claimsExists := c.Get("claims")
+	var res any
 
 	if !userIdExists || !tokenStringExists || !claimsExists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		res = dtos.ErrorResponse{
+			Error: "Unauthorized",
+		}
+		c.JSON(http.StatusUnauthorized, res)
 		return
 	}
 
 	if err := config.DB.Where("user_id = ?", userId).Delete(&models.RefreshToken{}).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to logout\n" + err.Error()})
+		res = dtos.ErrorResponse{
+			Error: "Failed to logout\n" + err.Error(),
+		}
+		c.JSON(http.StatusInternalServerError, res)
 		return
 	}
 
@@ -174,5 +253,9 @@ func Logout(c *gin.Context) {
 
 	config.DB.Create(&revoked)
 
-	c.JSON(http.StatusOK, gin.H{"message": "Logout success"})
+	res = dtos.SuccessResponse{
+		Data:    nil,
+		Message: "Logout success",
+	}
+	c.JSON(http.StatusOK, res)
 }
