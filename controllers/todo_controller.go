@@ -24,15 +24,15 @@ import (
 // @Accept json
 // @Produce json
 // @Param Authorization header string true "Bearer token"
-// @Param search query string true "Todo search filter"
-// @Param status query string true "Todo status filter"
-// @Param priority query string true "Todo priority filter"
-// @Param category query string true "Todo category filter"
-// @Param dueDate query string true "Todo due date filter"
-// @Param dueFrom query string true "Todo due from filter"
-// @Param dueTo query string true "Todo due to filter"
-// @Param sortBy query string true "Sort todo by field(s)"
-// @Param order query string true "Order sort by asc/desc"
+// @Param search query string false "Todo search filter"
+// @Param status query string false "Todo status filter"
+// @Param priority query string false "Todo priority filter"
+// @Param category query string false "Todo category filter"
+// @Param dueDate query string false "Todo due date filter"
+// @Param dueFrom query string false "Todo due from filter"
+// @Param dueTo query string false "Todo due to filter"
+// @Param sortBy query string false "Sort todo by field(s)"
+// @Param order query string false "Order sort by asc/desc"
 // @Success 200 {object} dtos.SuccessResponse
 // @Failure 401 {object} dtos.ErrorResponse
 // @Failure 500 {object} dtos.ErrorResponse
@@ -164,6 +164,26 @@ func CreateTodo(c *gin.Context) {
 		return
 	}
 
+	if input.AssignedTo != nil {
+		var user models.User
+		if err := config.DB.Where("id = ?", input.AssignedTo).First(&user).Error; err != nil {
+			res := dtos.ErrorResponse{
+				Error: "User not found",
+			}
+			c.JSON(http.StatusNotFound, res)
+			return
+		}
+	}
+
+	var category models.Category
+	if err := config.DB.Where("id = ?", input.CategoryID).First(&category).Error; err != nil {
+		res := dtos.ErrorResponse{
+			Error: "Category not found",
+		}
+		c.JSON(http.StatusNotFound, res)
+		return
+	}
+
 	loc, _ := time.LoadLocation(cfg.AppLocation)
 	due, err := time.ParseInLocation("2006-01-02 15:04:05", input.Due, loc)
 
@@ -183,11 +203,24 @@ func CreateTodo(c *gin.Context) {
 		return
 	}
 
+	userId, exists := c.Get("userId")
+
+	if !exists {
+		res := dtos.ErrorResponse{
+			Error: "Unauthorized, user not found in context",
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+
 	todo := models.Todo{
-		Title:      input.Title,
-		Priority:   input.Priority,
-		Due:        &due,
-		CategoryID: input.CategoryID,
+		Title:       input.Title,
+		Description: input.Description,
+		AssignedTo:  input.AssignedTo,
+		Priority:    input.Priority,
+		Due:         due,
+		CategoryID:  input.CategoryID,
+		CreatedBy:   userId.(uint),
 	}
 
 	if err := config.DB.Create(&todo).Error; err != nil {
@@ -248,7 +281,31 @@ func UpdateTodo(c *gin.Context) {
 		todo.Status = *input.Status
 	}
 	if input.Description != nil {
-		todo.Description = *input.Description
+		todo.Description = input.Description
+	}
+
+	if input.AssignedTo != nil {
+		var user models.User
+		if err := config.DB.Where("id = ?", input.AssignedTo).First(&user).Error; err != nil {
+			res := dtos.ErrorResponse{
+				Error: "User not found",
+			}
+			c.JSON(http.StatusNotFound, res)
+			return
+		}
+		todo.AssignedTo = input.AssignedTo
+	}
+
+	if input.CategoryID != nil {
+		var category models.Category
+		if err := config.DB.Where("id = ?", input.CategoryID).First(&category).Error; err != nil {
+			res := dtos.ErrorResponse{
+				Error: "Category not found",
+			}
+			c.JSON(http.StatusNotFound, res)
+			return
+		}
+		todo.CategoryID = *input.CategoryID
 	}
 
 	if input.Due != nil {
@@ -271,8 +328,20 @@ func UpdateTodo(c *gin.Context) {
 			return
 		}
 
-		todo.Due = &due
+		todo.Due = due
 	}
+
+	userId, exists := c.Get("userId")
+
+	if !exists {
+		res := dtos.ErrorResponse{
+			Error: "Unauthorized, user not found in conntext",
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+
+	todo.UpdatedBy = userId.(*uint)
 
 	if err := config.DB.Save(&todo).Error; err != nil {
 		utils.HandleDBError(c, err)

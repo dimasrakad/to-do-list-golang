@@ -12,6 +12,8 @@ definitions:
     type: object
   dtos.CreateTodoRequest:
     properties:
+      assignedTo:
+        type: integer
       categoryId:
         type: integer
       description:
@@ -467,47 +469,38 @@ paths:
       - description: Todo search filter
         in: query
         name: search
-        required: true
         type: string
       - description: Todo status filter
         in: query
         name: status
-        required: true
         type: string
       - description: Todo priority filter
         in: query
         name: priority
-        required: true
         type: string
       - description: Todo category filter
         in: query
         name: category
-        required: true
         type: string
       - description: Todo due date filter
         in: query
         name: dueDate
-        required: true
         type: string
       - description: Todo due from filter
         in: query
         name: dueFrom
-        required: true
         type: string
       - description: Todo due to filter
         in: query
         name: dueTo
-        required: true
         type: string
       - description: Sort todo by field(s)
         in: query
         name: sortBy
-        required: true
         type: string
       - description: Order sort by asc/desc
         in: query
         name: order
-        required: true
         type: string
       produces:
       - application/json

@@ -496,64 +496,55 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Todo search filter",
                         "name": "search",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "Todo status filter",
                         "name": "status",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "Todo priority filter",
                         "name": "priority",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "Todo category filter",
                         "name": "category",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "Todo due date filter",
                         "name": "dueDate",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "Todo due from filter",
                         "name": "dueFrom",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "Todo due to filter",
                         "name": "dueTo",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "Sort todo by field(s)",
                         "name": "sortBy",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "Order sort by asc/desc",
                         "name": "order",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -778,6 +769,9 @@ const docTemplate = `{
                 "title"
             ],
             "properties": {
+                "assignedTo": {
+                    "type": "integer"
+                },
                 "categoryId": {
                     "type": "integer"
                 },

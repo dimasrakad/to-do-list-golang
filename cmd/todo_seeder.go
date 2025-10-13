@@ -35,10 +35,13 @@ func TodoSeed(count int, truncate bool) {
 		loc, _ := time.LoadLocation(cfg.AppLocation)
 		due = due.In(loc)
 
+		description := faker.Paragraph()
+		assignedTo := uint(rand.Intn(3) + 1)
+
 		todo := models.Todo{
 			Title:       faker.Sentence(),
-			Description: faker.Paragraph(),
-			AssignedTo:  uint(rand.Intn(3) + 1),
+			Description: &description,
+			AssignedTo:  &assignedTo,
 			Status:      statuses[rand.Intn(len(statuses))],
 			Priority:    priorities[rand.Intn(len(priorities))],
 			Due:         due,
