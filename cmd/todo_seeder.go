@@ -23,7 +23,7 @@ func TodoSeed(count int, truncate bool) {
 
 	rand.Seed(time.Now().UnixNano())
 
-	for i := 0; i < count; i++ {
+	for range count {
 		randomDays := rand.Intn(30) + 1
 		randomHours := rand.Intn(24)
 		randomMinutes := rand.Intn(60)
@@ -38,10 +38,12 @@ func TodoSeed(count int, truncate bool) {
 		todo := models.Todo{
 			Title:       faker.Sentence(),
 			Description: faker.Paragraph(),
+			AssignedTo:  uint(rand.Intn(3) + 1),
 			Status:      statuses[rand.Intn(len(statuses))],
 			Priority:    priorities[rand.Intn(len(priorities))],
-			Due:         &due,
+			Due:         due,
 			CategoryID:  uint(rand.Intn(4) + 1),
+			CreatedBy:   uint(rand.Intn(3) + 1),
 		}
 
 		config.DB.Create(&todo)

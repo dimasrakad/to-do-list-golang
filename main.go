@@ -1,6 +1,8 @@
 package main
 
 import (
+	"flag"
+	"to-do-list-golang/cmd"
 	"to-do-list-golang/config"
 	_ "to-do-list-golang/docs"
 	"to-do-list-golang/goroutines"
@@ -44,17 +46,18 @@ func main() {
 	goroutines.StartTokenCleanup()
 
 	// Flag
-	// seed := flag.Bool("seed", false, "run database seeder")
-	// count := flag.Int("count", 10, "number of records to seed")
-	// truncate := flag.Bool("truncate", false, "truncate table before seeding")
-	// flag.Parse()
+	seed := flag.Bool("seed", false, "run database seeder")
+	count := flag.Int("count", 10, "number of records to seed")
+	truncate := flag.Bool("truncate", false, "truncate table before seeding")
+	flag.Parse()
 
-	// if *seed {
-	// 	cmd.CategoryColorSeed()
-	// 	cmd.CategorySeed()
-	// 	cmd.TodoSeed(*count, *truncate)
-	// 	return
-	// }
+	if *seed {
+		cmd.UserSeed()
+		cmd.CategoryColorSeed()
+		cmd.CategorySeed()
+		cmd.TodoSeed(*count, *truncate)
+		return
+	}
 
 	// Init Gin
 	r := gin.Default()
