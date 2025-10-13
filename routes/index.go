@@ -9,5 +9,6 @@ func RouteIndex(r *gin.Engine) {
 		CategoryRoute(v1)
 		CategoryColorRoute(v1)
 		AuthRoute(v1)
+		UserRoute(v1)
 	}
 }
