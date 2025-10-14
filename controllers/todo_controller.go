@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -253,7 +254,7 @@ func CreateTodo(c *gin.Context) {
 // @Failure 400 {object} dtos.ErrorResponse
 // @Failure 401 {object} dtos.ErrorResponse
 // @Failure 500 {object} dtos.ErrorResponse
-// @Router /todos [patch]
+// @Router /todos/{id} [patch]
 func UpdateTodo(c *gin.Context) {
 	cfg := config.LoadConfig()
 	id, _ := strconv.Atoi(c.Param("id"))
@@ -373,9 +374,10 @@ func UpdateTodo(c *gin.Context) {
 // @Failure 401 {object} dtos.ErrorResponse
 // @Failure 404 {object} dtos.ErrorResponse
 // @Failure 500 {object} dtos.ErrorResponse
-// @Router /todos [delete]
+// @Router /todos/{id} [delete]
 func DeleteTodo(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
+	var res any
 
 	var todo models.Todo
 	if err := config.DB.First(&todo, id).Error; err != nil {
@@ -384,17 +386,129 @@ func DeleteTodo(c *gin.Context) {
 	}
 
 	if err := config.DB.Delete(&models.Todo{}, id).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete"})
+		res = dtos.ErrorResponse{
+			Error: "Failed to delete",
+		}
+		c.JSON(http.StatusInternalServerError, res)
 		return
 	}
 
-	res := dtos.SuccessResponse{
+	res = dtos.SuccessResponse{
 		Data:    nil,
 		Message: "Todo deleted",
 	}
 	c.JSON(http.StatusOK, res)
 }
 
+// "Upload Attachments" godoc
+// @Summary "Upload multiple attachments for a todo"
+// @Description Upload one or more attachment files for a specific todo
+// @Tags Todo
+// @Accept multipart/form-data
+// @Produce json
+// @Param ID path uint true "Todo id"
+// @Param Authorization header string true "Bearer token"
+// @Param attachments formData file true "Upload attachments field (multiple)"
+// @Success 201 {object} dtos.SuccessResponse
+// @Failure 401 {object} dtos.ErrorResponse
+// @Failure 404 {object} dtos.ErrorResponse
+// @Failure 500 {object} dtos.ErrorResponse
+// @Router /todos/{id}/attachments [post]
+func UploadAttachments(c *gin.Context) {
+	todoID := c.Param("id")
+	var res any
+
+	var todo models.Todo
+	if err := config.DB.First(&todo, todoID).Error; err != nil {
+		utils.HandleDBError(c, err)
+		return
+	}
+
+	form, err := c.MultipartForm()
+	if err != nil {
+		res = dtos.ErrorResponse{
+			Error: "Invalid form data",
+		}
+		c.JSON(http.StatusBadRequest, res)
+		return
+	}
+
+	files := form.File["attachments"]
+	if len(files) == 0 {
+		res = dtos.ErrorResponse{
+			Error: "No files uploaded",
+		}
+		c.JSON(http.StatusBadRequest, res)
+		return
+	}
+
+	var attachments []models.Attachment
+	uploadDir := "uploads/todos"
+
+	if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
+		res = dtos.ErrorResponse{
+			Error: "Failed to create upload folder",
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	for _, file := range files {
+		fileName := fmt.Sprintf("%d_%s", time.Now().UnixNano(), file.Filename)
+		filePath := fmt.Sprintf("%s/%s", uploadDir, fileName)
+
+		if err := c.SaveUploadedFile(file, filePath); err != nil {
+			res = dtos.ErrorResponse{
+				Error: "Failed to save file",
+			}
+			c.JSON(http.StatusInternalServerError, res)
+			return
+		}
+
+		attachment := models.Attachment{
+			TodoID:   todo.ID,
+			FileName: file.Filename,
+			FilePath: filePath,
+			FileType: file.Header.Get("Content-Type"),
+		}
+		attachments = append(attachments, attachment)
+	}
+
+	if err := config.DB.Create(&attachments).Error; err != nil {
+		utils.HandleDBError(c, err)
+		return
+	}
+
+	res = dtos.SuccessResponse{
+		Message: fmt.Sprintf("%d file(s) uploaded", len(attachments)),
+	}
+	c.JSON(http.StatusCreated, res)
+}
+
+// "Get Attachment" godoc
+// @Summary "Preview or download an attachment for a todo"
+// @Description Returns the file content for a specific todo attachment
+// @Tags Todo
+// @Produce octet-stream
+// @Param ID path uint true "Attachment id"
+// @Param Authorization header string true "Bearer token"
+// @Success 200 {file} file
+// @Failure 401 {object} dtos.ErrorResponse
+// @Failure 404 {object} dtos.ErrorResponse
+// @Router /todos/attachments/{id} [get]
+func GetAttachment(c *gin.Context) {
+	id := c.Param("id")
+	var attachment models.Attachment
+
+	if err := config.DB.First(&attachment, id).Error; err != nil {
+		res := dtos.ErrorResponse{
+			Error: "Attachment not found",
+		}
+		c.JSON(http.StatusNotFound, res)
+	}
+	c.File(attachment.FilePath)
+}
+
 func todoWithRelations(db *gorm.DB) *gorm.DB {
-	return db.Preload("Category").Preload("Category.CategoryColor").Preload("CreatedBy")
+	return db.Preload("Category").Preload("Category.CategoryColor").Preload("CreatedBy").Preload("UpdatedBy").Preload("Assignees").Preload("Attachments")
 }

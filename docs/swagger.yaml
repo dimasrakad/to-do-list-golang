@@ -13,7 +13,9 @@ definitions:
   dtos.CreateTodoRequest:
     properties:
       assignedTo:
-        type: integer
+        items:
+          type: integer
+        type: array
       categoryId:
         type: integer
       description:
@@ -29,6 +31,7 @@ definitions:
       title:
         type: string
     required:
+    - assignedTo
     - due
     - title
     type: object
@@ -90,7 +93,9 @@ definitions:
   dtos.UpdateTodoRequest:
     properties:
       assignedTo:
-        type: integer
+        items:
+          type: integer
+        type: array
       categoryId:
         type: integer
       description:
@@ -251,6 +256,73 @@ paths:
       tags:
       - Auth
   /categories:
+    get:
+      consumes:
+      - application/json
+      description: Get all todo categories
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: '"Get Categories"'
+      tags:
+      - Category
+    post:
+      consumes:
+      - application/json
+      description: Create new todo category
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Create category input
+        in: body
+        name: Payload
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dtos.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: '"Create Category"'
+      tags:
+      - Category
+  /categories/{id}:
     delete:
       consumes:
       - application/json
@@ -286,34 +358,6 @@ paths:
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
       summary: '"Delete Category"'
-      tags:
-      - Category
-    get:
-      consumes:
-      - application/json
-      description: Get all todo categories
-      parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dtos.SuccessResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-      summary: '"Get Categories"'
       tags:
       - Category
     patch:
@@ -359,44 +403,6 @@ paths:
       summary: '"Update Category"'
       tags:
       - Category
-    post:
-      consumes:
-      - application/json
-      description: Create new todo category
-      parameters:
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      - description: Create category input
-        in: body
-        name: Payload
-        required: true
-        schema:
-          $ref: '#/definitions/dtos.CreateCategoryRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/dtos.SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-      summary: '"Create Category"'
-      tags:
-      - Category
   /category-colors:
     get:
       consumes:
@@ -423,43 +429,6 @@ paths:
       tags:
       - Category
   /todos:
-    delete:
-      consumes:
-      - application/json
-      description: Delete existing todo
-      parameters:
-      - description: Todo id
-        in: path
-        name: ID
-        required: true
-        type: integer
-      - description: Bearer token
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dtos.SuccessResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-      summary: '"Delete Todo"'
-      tags:
-      - Todo
     get:
       consumes:
       - application/json
@@ -524,6 +493,82 @@ paths:
       summary: '"Get Todos"'
       tags:
       - Todo
+    post:
+      consumes:
+      - application/json
+      description: Create new todo
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Create category input
+        in: body
+        name: Payload
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateTodoRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dtos.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: '"Create Todo"'
+      tags:
+      - Todo
+  /todos/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete existing todo
+      parameters:
+      - description: Todo id
+        in: path
+        name: ID
+        required: true
+        type: integer
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: '"Delete Todo"'
+      tags:
+      - Todo
     patch:
       consumes:
       - application/json
@@ -567,22 +612,27 @@ paths:
       summary: '"Update Todo"'
       tags:
       - Todo
+  /todos/{id}/attachments:
     post:
       consumes:
-      - application/json
-      description: Create new todo
+      - multipart/form-data
+      description: Upload one or more attachment files for a specific todo
       parameters:
+      - description: Todo id
+        in: path
+        name: ID
+        required: true
+        type: integer
       - description: Bearer token
         in: header
         name: Authorization
         required: true
         type: string
-      - description: Create category input
-        in: body
-        name: Payload
+      - description: Upload attachments field (multiple)
+        in: formData
+        name: attachments
         required: true
-        schema:
-          $ref: '#/definitions/dtos.CreateTodoRequest'
+        type: file
       produces:
       - application/json
       responses:
@@ -590,19 +640,51 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/dtos.SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
-      summary: '"Create Todo"'
+      summary: '"Upload multiple attachments for a todo"'
+      tags:
+      - Todo
+  /todos/attachments/{id}:
+    get:
+      description: Returns the file content for a specific todo attachment
+      parameters:
+      - description: Attachment id
+        in: path
+        name: ID
+        required: true
+        type: integer
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: '"Preview or download an attachment for a todo"'
       tags:
       - Todo
   /users:

@@ -15,5 +15,7 @@ func TodoRoute(r *gin.RouterGroup) {
 		todos.POST("", controllers.CreateTodo)
 		todos.PATCH("/:id", controllers.UpdateTodo)
 		todos.DELETE("/:id", controllers.DeleteTodo)
+		todos.POST("/:id/attachments", controllers.UploadAttachments)
+		todos.GET("/attachments/:id", controllers.GetAttachment)
 	}
 }

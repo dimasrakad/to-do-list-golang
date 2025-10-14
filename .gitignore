@@ -50,3 +50,6 @@ Thumbs.db
 # Air / Fresh / Reflex configs
 # =========================
 .air.toml
+
+# Other
+uploads/

@@ -95,7 +95,7 @@ func CreateCategory(c *gin.Context) {
 // @Failure 400 {object} dtos.ErrorResponse
 // @Failure 401 {object} dtos.ErrorResponse
 // @Failure 500 {object} dtos.ErrorResponse
-// @Router /categories [patch]
+// @Router /categories/{id} [patch]
 func UpdateCategory(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 
@@ -147,7 +147,7 @@ func UpdateCategory(c *gin.Context) {
 // @Failure 401 {object} dtos.ErrorResponse
 // @Failure 404 {object} dtos.ErrorResponse
 // @Failure 500 {object} dtos.ErrorResponse
-// @Router /categories [delete]
+// @Router /categories/{id} [delete]
 func DeleteCategory(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 

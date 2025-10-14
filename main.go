@@ -41,6 +41,7 @@ func main() {
 		&models.User{},
 		&models.RefreshToken{},
 		&models.RevokedToken{},
+		&models.Attachment{},
 	)
 
 	goroutines.StartTokenCleanup()

@@ -312,7 +312,9 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
+            }
+        },
+        "/categories/{id}": {
             "delete": {
                 "description": "Delete existing todo category",
                 "consumes": [
@@ -624,7 +626,57 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
+            }
+        },
+        "/todos/attachments/{id}": {
+            "get": {
+                "description": "Returns the file content for a specific todo attachment",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "Todo"
+                ],
+                "summary": "\"Preview or download an attachment for a todo\"",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Attachment id",
+                        "name": "ID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/todos/{id}": {
             "delete": {
                 "description": "Delete existing todo",
                 "consumes": [
@@ -745,6 +797,70 @@ const docTemplate = `{
                 }
             }
         },
+        "/todos/{id}/attachments": {
+            "post": {
+                "description": "Upload one or more attachment files for a specific todo",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Todo"
+                ],
+                "summary": "\"Upload multiple attachments for a todo\"",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Todo id",
+                        "name": "ID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Upload attachments field (multiple)",
+                        "name": "attachments",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.SuccessResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "get": {
                 "description": "Get all user names",
@@ -809,12 +925,16 @@ const docTemplate = `{
         "dtos.CreateTodoRequest": {
             "type": "object",
             "required": [
+                "assignedTo",
                 "due",
                 "title"
             ],
             "properties": {
                 "assignedTo": {
-                    "type": "integer"
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "categoryId": {
                     "type": "integer"
@@ -926,7 +1046,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "assignedTo": {
-                    "type": "integer"
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "categoryId": {
                     "type": "integer"
