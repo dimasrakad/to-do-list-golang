@@ -36,20 +36,17 @@ func TodoSeed(count int, truncate bool) {
 		due = due.In(loc)
 
 		description := faker.Paragraph()
-		assignedTo := uint(rand.Intn(3) + 1)
 
 		todo := models.Todo{
 			Title:       faker.Sentence(),
 			Description: &description,
-			AssignedTo:  &assignedTo,
 			Status:      statuses[rand.Intn(len(statuses))],
 			Priority:    priorities[rand.Intn(len(priorities))],
 			Due:         due,
 			CategoryID:  uint(rand.Intn(4) + 1),
-			CreatedBy:   uint(rand.Intn(3) + 1),
+			CreatedByID: uint(rand.Intn(3) + 1),
 		}
 
 		config.DB.Create(&todo)
-		fmt.Println("Inserted: ", todo.Title)
 	}
 }

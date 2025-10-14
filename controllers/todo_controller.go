@@ -164,13 +164,13 @@ func CreateTodo(c *gin.Context) {
 		return
 	}
 
-	if input.AssignedTo != nil {
-		var user models.User
-		if err := config.DB.Where("id = ?", input.AssignedTo).First(&user).Error; err != nil {
+	var assignees []models.User
+	if len(input.AssignedTo) > 0 {
+		if err := config.DB.Where("id IN ?", input.AssignedTo).Find(&assignees).Error; err != nil {
 			res := dtos.ErrorResponse{
-				Error: "User not found",
+				Error: "Failed to find assignees",
 			}
-			c.JSON(http.StatusNotFound, res)
+			c.JSON(http.StatusBadRequest, res)
 			return
 		}
 	}
@@ -216,11 +216,11 @@ func CreateTodo(c *gin.Context) {
 	todo := models.Todo{
 		Title:       input.Title,
 		Description: input.Description,
-		AssignedTo:  input.AssignedTo,
+		Assignees:   assignees,
 		Priority:    input.Priority,
 		Due:         due,
 		CategoryID:  input.CategoryID,
-		CreatedBy:   userId.(uint),
+		CreatedByID: userId.(uint),
 	}
 
 	if err := config.DB.Create(&todo).Error; err != nil {
@@ -284,16 +284,16 @@ func UpdateTodo(c *gin.Context) {
 		todo.Description = input.Description
 	}
 
-	if input.AssignedTo != nil {
-		var user models.User
-		if err := config.DB.Where("id = ?", input.AssignedTo).First(&user).Error; err != nil {
+	if input.AssignedTo != nil && len(*input.AssignedTo) > 0 {
+		var assignees []models.User
+		if err := config.DB.Where("id IN ?", *input.AssignedTo).Find(&assignees).Error; err != nil {
 			res := dtos.ErrorResponse{
 				Error: "User not found",
 			}
 			c.JSON(http.StatusNotFound, res)
 			return
 		}
-		todo.AssignedTo = input.AssignedTo
+		todo.Assignees = assignees
 	}
 
 	if input.CategoryID != nil {
@@ -341,7 +341,8 @@ func UpdateTodo(c *gin.Context) {
 		return
 	}
 
-	todo.UpdatedBy = userId.(*uint)
+	uintUserId := userId.(uint)
+	todo.UpdatedByID = &uintUserId
 
 	if err := config.DB.Save(&todo).Error; err != nil {
 		utils.HandleDBError(c, err)
@@ -395,5 +396,5 @@ func DeleteTodo(c *gin.Context) {
 }
 
 func todoWithRelations(db *gorm.DB) *gorm.DB {
-	return db.Preload("Category").Preload("Category.CategoryColor")
+	return db.Preload("Category").Preload("Category.CategoryColor").Preload("CreatedBy")
 }

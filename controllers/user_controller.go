@@ -10,6 +10,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// "Get User Names" godoc
+// @Summary "Get User Names"
+// @Description Get all user names
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer token"
+// @Success 200 {object} dtos.SuccessResponse
+// @Failure 401 {object} dtos.ErrorResponse
+// @Failure 500 {object} dtos.ErrorResponse
+// @Router /users [get]
 func GetUserNames(c *gin.Context) {
 	var users []models.User
 
