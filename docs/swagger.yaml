@@ -655,6 +655,40 @@ paths:
       summary: '"Upload multiple attachments for a todo"'
       tags:
       - Todo
+  /todos/attachment/{id}:
+    delete:
+      description: Delete a todo attachment by its ID (both file and database record)
+      parameters:
+      - description: Attachment ID
+        in: path
+        name: ID
+        required: true
+        type: integer
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: '"Delete an attachment"'
+      tags:
+      - Todo
   /todos/attachments/{id}:
     get:
       description: Returns the file content for a specific todo attachment

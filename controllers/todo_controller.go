@@ -509,6 +509,55 @@ func GetAttachment(c *gin.Context) {
 	c.File(attachment.FilePath)
 }
 
+// "Delete Attachment" godoc
+// @Summary "Delete an attachment"
+// @Description Delete a todo attachment by its ID (both file and database record)
+// @Tags Todo
+// @Param ID path int true "Attachment ID"
+// @Param Authorization header string true "Bearer token"
+// @Success 200 {object} dtos.SuccessResponse
+// @Failure 401 {object} dtos.ErrorResponse
+// @Failure 404 {object} dtos.ErrorResponse
+// @Failure 500 {object} dtos.ErrorResponse
+// @Router /todos/attachment/{id} [delete]
+func DeleteAttachment(c *gin.Context) {
+	id := c.Param("id")
+	var attachment models.Attachment
+	var res any
+
+	if err := config.DB.First(&attachment, id).Error; err != nil {
+		res = dtos.ErrorResponse{
+			Error: "Attachment not found",
+		}
+		c.JSON(http.StatusNotFound, res)
+		return
+	}
+
+	if attachment.FilePath != "" {
+		if err := os.Remove(attachment.FilePath); err != nil && !os.IsNotExist(err) {
+			res = dtos.ErrorResponse{
+				Error: "Failed to delete attachment file",
+			}
+			c.JSON(http.StatusInternalServerError, res)
+			return
+		}
+	}
+
+	if err := config.DB.Delete(&attachment, id).Error; err != nil {
+		res = dtos.ErrorResponse{
+			Error: "Failed to delete attachment record",
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	res = dtos.SuccessResponse{
+		Data:    nil,
+		Message: "Attachment deleted",
+	}
+	c.JSON(http.StatusOK, res)
+}
+
 func todoWithRelations(db *gorm.DB) *gorm.DB {
 	return db.Preload("Category").Preload("Category.CategoryColor").Preload("CreatedBy").Preload("UpdatedBy").Preload("Assignees").Preload("Attachments")
 }
