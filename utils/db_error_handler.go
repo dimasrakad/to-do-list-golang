@@ -61,6 +61,16 @@ func HandleDBError(c *gin.Context, err error) {
 			res.Error = "Required field " + column
 			c.JSON(http.StatusBadRequest, res)
 			return
+		case 1265: // Data truncated for column
+			re := regexp.MustCompile(`for column '(.+?)'`)
+			matches := re.FindStringSubmatch(mysqlErr.Message)
+			column := "column"
+			if len(matches) > 1 {
+				column = matches[1]
+			}
+			res.Error = "Invalid value for field " + column
+			c.JSON(http.StatusBadRequest, res)
+			return
 		}
 	}
 

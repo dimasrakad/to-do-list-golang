@@ -6,5 +6,5 @@ type CreateTodoRequest struct {
 	AssignedTo  []uint  `json:"assignedTo" binding:"required"`
 	Priority    string  `json:"priority" binding:"oneof=low medium high"`
 	Due         string  `json:"due" binding:"required"`
-	CategoryID  uint    `json:"categoryId"`
+	CategoryID  uint    `json:"categoryId" binding:"required"`
 }

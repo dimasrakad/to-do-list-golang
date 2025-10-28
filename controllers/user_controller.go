@@ -22,17 +22,11 @@ import (
 // @Failure 500 {object} dtos.ErrorResponse
 // @Router /users [get]
 func GetUserNames(c *gin.Context) {
-	var users []models.User
+	var userNames []dtos.GetUserNameResponse
 
-	if err := config.DB.Model(&models.User{}).Find(&users).Error; err != nil {
+	if err := config.DB.Model(&models.User{}).Find(&userNames).Error; err != nil {
 		utils.HandleDBError(c, err)
 		return
-	}
-
-	var userNames []string
-
-	for _, v := range users {
-		userNames = append(userNames, v.Name)
 	}
 
 	res := dtos.SuccessResponse{

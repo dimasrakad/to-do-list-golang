@@ -5,9 +5,9 @@ import (
 	"to-do-list-golang/cmd"
 	"to-do-list-golang/config"
 	_ "to-do-list-golang/docs"
-	"to-do-list-golang/goroutines"
 	"to-do-list-golang/models"
 	"to-do-list-golang/routes"
+	"to-do-list-golang/schedulers"
 	"to-do-list-golang/validators"
 
 	"github.com/gin-gonic/gin"
@@ -44,7 +44,7 @@ func main() {
 		&models.Attachment{},
 	)
 
-	goroutines.StartTokenCleanup()
+	schedulers.StartTokenCleanup()
 
 	// Flag
 	seed := flag.Bool("seed", false, "run database seeder")

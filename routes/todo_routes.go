@@ -12,6 +12,8 @@ func TodoRoute(r *gin.RouterGroup) {
 	todos.Use(middlewares.AuthMiddleware())
 	{
 		todos.GET("", controllers.GetTodos)
+		todos.GET("/:id", controllers.GetTodoByID)
+		todos.GET("/enums", controllers.GetTodoEnums)
 		todos.POST("", controllers.CreateTodo)
 		todos.PATCH("/:id", controllers.UpdateTodo)
 		todos.DELETE("/:id", controllers.DeleteTodo)

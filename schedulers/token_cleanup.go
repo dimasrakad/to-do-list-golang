@@ -1,4 +1,4 @@
-package goroutines
+package schedulers
 
 import (
 	"log"
@@ -9,6 +9,7 @@ import (
 
 func StartTokenCleanup() {
 	ticker := time.NewTicker(1 * time.Hour) // Run every hour
+
 	go func() {
 		for range ticker.C {
 			now := time.Now()

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"to-do-list-golang/config"
+	"to-do-list-golang/enums"
 	"to-do-list-golang/models"
 	"to-do-list-golang/models/dtos"
 	"to-do-list-golang/utils"
@@ -39,7 +40,7 @@ import (
 // @Failure 500 {object} dtos.ErrorResponse
 // @Router /todos [get]
 func GetTodos(c *gin.Context) {
-	var todos []models.Todo
+	var todos []dtos.GetTodosResponse
 
 	query := config.DB.Model(&models.Todo{})
 
@@ -127,7 +128,7 @@ func GetTodos(c *gin.Context) {
 	var total int64
 	query.Count(&total)
 
-	if err := todoWithRelations(query).Offset(offset).Limit(limit).Find(&todos).Error; err != nil {
+	if err := query.Preload("Category").Preload("Category.CategoryColor").Offset(offset).Limit(limit).Find(&todos).Error; err != nil {
 		utils.HandleDBError(c, err)
 		return
 	}
@@ -138,6 +139,57 @@ func GetTodos(c *gin.Context) {
 		Limit:      limit,
 		Total:      total,
 		TotalPages: int(math.Ceil(float64(total) / float64(limit))),
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+// "Get Todo by ID" godoc
+// @Summary "Get Todo by ID"
+// @Description Get a todo by its ID
+// @Tags Todo
+// @Accept json
+// @Produce json
+// @Param ID path uint true "Todo id"
+// @Param Authorization header string true "Bearer token"
+// @Success 200 {object} dtos.SuccessResponse
+// @Failure 401 {object} dtos.ErrorResponse
+// @Failure 404 {object} dtos.ErrorResponse
+// @Failure 500 {object} dtos.ErrorResponse
+// @Router /todos/{id} [get]
+func GetTodoByID(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
+	var res any
+	var todo models.Todo
+
+	if err := todoWithRelations(config.DB).First(&todo, id).Error; err != nil {
+		utils.HandleDBError(c, err)
+		return
+	}
+
+	res = dtos.SuccessResponse{
+		Data:    todo,
+		Message: "",
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+// "Get Todo Enums" godoc
+// @Summary "Get Todo Enums"
+// @Description Returns all possible enum values for Todo fields
+// @Tags Todo
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer token"
+// @Success 200 {object} dtos.SuccessResponse
+// @Failure 401 {object} dtos.ErrorResponse
+// @Router /todos/enums [get]
+func GetTodoEnums(c *gin.Context) {
+	data := gin.H{
+		"status":   enums.TodoStatuses,
+		"priority": enums.TodoPriorities,
+	}
+	res := dtos.SuccessResponse{
+		Data: data,
 	}
 	c.JSON(http.StatusOK, res)
 }

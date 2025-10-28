@@ -32,6 +32,7 @@ definitions:
         type: string
     required:
     - assignedTo
+    - categoryId
     - due
     - title
     type: object
@@ -569,6 +570,43 @@ paths:
       summary: '"Delete Todo"'
       tags:
       - Todo
+    get:
+      consumes:
+      - application/json
+      description: Get a todo by its ID
+      parameters:
+      - description: Todo id
+        in: path
+        name: ID
+        required: true
+        type: integer
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: '"Get Todo by ID"'
+      tags:
+      - Todo
     patch:
       consumes:
       - application/json
@@ -719,6 +757,31 @@ paths:
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
       summary: '"Preview or download an attachment for a todo"'
+      tags:
+      - Todo
+  /todos/enums:
+    get:
+      consumes:
+      - application/json
+      description: Returns all possible enum values for Todo fields
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: '"Get Todo Enums"'
       tags:
       - Todo
   /users:
