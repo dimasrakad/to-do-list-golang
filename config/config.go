@@ -9,7 +9,10 @@ import (
 )
 
 type Config struct {
+	AppHost          string
+	AppURL           string
 	AppPort          string
+	AppPath          string
 	AppLocation      string
 	DBUser           string
 	DBPass           string
@@ -42,7 +45,10 @@ func LoadConfig() *Config {
 		}
 
 		cfg = &Config{
+			AppHost:          getEnv("APP_HOST", "localhost"),
+			AppURL:           getEnv("APP_URL", "http://localhost"),
 			AppPort:          getEnv("APP_PORT", "8080"),
+			AppPath:          getEnv("APP_PATH", "/api/v1"),
 			AppLocation:      getEnv("APP_LOCATION", "Asia/Jakarta"),
 			DBUser:           getEnv("DB_USER", "root"),
 			DBPass:           getEnv("DB_PASS", ""),

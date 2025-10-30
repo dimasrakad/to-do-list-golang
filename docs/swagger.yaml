@@ -256,6 +256,31 @@ paths:
       summary: Register a new user
       tags:
       - Auth
+  /auth/verify:
+    get:
+      consumes:
+      - text/html
+      description: Verifies a user's email using a verification token sent via email.
+      parameters:
+      - description: Verification token
+        in: query
+        name: token
+        required: true
+        type: string
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: Email verified successfully (HTML page)
+          schema:
+            type: string
+        "500":
+          description: Internal server error (HTML page)
+          schema:
+            type: string
+      summary: Verify user's email
+      tags:
+      - Auth
   /categories:
     get:
       consumes:

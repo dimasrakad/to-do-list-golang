@@ -20,6 +20,49 @@ var (
 	emailTemplatePath string
 )
 
+func SendVerificationEmail(user models.User) error {
+	cfg := config.LoadConfig()
+
+	emailTemplatePath := filepath.Join("templates", "emails", "verification.html")
+	emailTemplate, err := template.ParseFiles(emailTemplatePath)
+	if err != nil {
+		log.Println("Error parsing email template:", err)
+		return err
+	}
+
+	smtpPort, err := strconv.Atoi(cfg.SMTPPort)
+	if err != nil {
+		log.Println("Error parsing SMTP Port:", err)
+		return err
+	}
+
+	d := gomail.NewDialer(cfg.SMTPHost, smtpPort, cfg.SMTPUser, cfg.SMTPPass)
+
+	data := map[string]string{
+		"Name": user.Name,
+		"Link": cfg.AppURL + ":" + cfg.AppPort + cfg.AppPath + "/auth/verify?token=" + *user.VerifyToken,
+	}
+
+	var body bytes.Buffer
+	if err := emailTemplate.Execute(&body, data); err != nil {
+		log.Println("Error executing email template:", err)
+		return err
+	}
+
+	mail := gomail.NewMessage()
+	mail.SetHeader("From", cfg.SMTPFrom)
+	mail.SetHeader("To", user.Email)
+	mail.SetHeader("Subject", "To Do List App - Email Verification")
+	mail.SetBody("text/html", body.String())
+
+	if err := d.DialAndSend(mail); err != nil {
+		log.Println("Error sending verification email:", err)
+		return err
+	}
+
+	return nil
+}
+
 func SendNotificationEmail(notificationType string, todo models.Todo) error {
 	var err error
 	cfg := config.LoadConfig()

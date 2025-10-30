@@ -7,7 +7,6 @@ import (
 	_ "to-do-list-golang/docs"
 	"to-do-list-golang/models"
 	"to-do-list-golang/routes"
-	"to-do-list-golang/schedulers"
 	"to-do-list-golang/validators"
 
 	"github.com/gin-gonic/gin"
@@ -45,8 +44,8 @@ func main() {
 		&models.EmailLog{},
 	)
 
-	schedulers.StartTokenCleanup()
-	schedulers.StartDueNotifier()
+	// schedulers.StartTokenCleanup()
+	// schedulers.StartDueNotifier()
 
 	// Flag
 	seed := flag.Bool("seed", false, "run database seeder")
@@ -72,6 +71,9 @@ func main() {
 	if validator, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		validator.RegisterValidation("password", validators.PasswordValidator)
 	}
+
+	// Load HTML templates
+	r.LoadHTMLGlob("templates/*.html")
 
 	// Swagger
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

@@ -26,30 +26,93 @@ import (
 // @Router /auth/register [post]
 func Register(c *gin.Context) {
 	var input dtos.RegisterRequest
+	var err error
+	var res any
 
 	if !utils.ValidateInput(c, &input) {
 		return
 	}
 
-	hashedPassword, _ := utils.HashPassword(input.Password)
-
-	user := models.User{
-		Name:     input.Name,
-		Email:    input.Email,
-		Password: hashedPassword,
+	hashedPassword, err := utils.HashPassword(input.Password)
+	if err != nil {
+		res = dtos.ErrorResponse{
+			Error: "Error while hashing password: " + err.Error(),
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
 	}
 
-	if err := config.DB.Create(&user).Error; err != nil {
+	verifyToken, err := utils.GenerateRandomToken(32)
+	if err != nil {
+		res = dtos.ErrorResponse{
+			Error: "Error while generating verification token: " + err.Error(),
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	user := models.User{
+		Name:        input.Name,
+		Email:       input.Email,
+		Password:    hashedPassword,
+		VerifyToken: &verifyToken,
+	}
+
+	if err = config.DB.Create(&user).Error; err != nil {
 		utils.HandleDBError(c, err)
 		return
 	}
 
-	res := dtos.SuccessResponse{
+	if err = utils.SendVerificationEmail(user); err != nil {
+		res = dtos.ErrorResponse{
+			Error: "Error while sending verification email: " + err.Error(),
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	res = dtos.SuccessResponse{
 		Data:    user,
 		Message: "",
 	}
 
 	c.JSON(http.StatusCreated, res)
+}
+
+// Verify Email godoc
+// @Summary Verify user's email
+// @Description Verifies a user's email using a verification token sent via email.
+// @Tags Auth
+// @Accept text/html
+// @Produce text/html
+// @Param token query string true "Verification token"
+// @Success 200 {string} string "Email verified successfully (HTML page)"
+// @Failure 500 {string} string "Internal server error (HTML page)"
+// @Router /auth/verify [get]
+func VerifyEmail(c *gin.Context) {
+	var token = c.Query("token")
+
+	if token == "" {
+		c.HTML(http.StatusInternalServerError, "failed-verify.html", nil)
+		return
+	}
+
+	var user models.User
+	if err := config.DB.Where("verify_token = ?", token).First(&user).Error; err != nil {
+		c.HTML(http.StatusInternalServerError, "failed-verify.html", nil)
+		return
+	}
+
+	user.IsVerified = true
+	user.VerifyToken = nil
+	now := time.Now()
+	user.VerifiedAt = &now
+	if err := config.DB.Save(&user).Error; err != nil {
+		c.HTML(http.StatusInternalServerError, "failed-verify.html", nil)
+		return
+	}
+
+	c.HTML(http.StatusOK, "success-verify.html", nil)
 }
 
 // Login godoc
@@ -86,6 +149,14 @@ func Login(c *gin.Context) {
 	if !utils.CheckPasswordHash(input.Password, user.Password) {
 		res = dtos.ErrorResponse{
 			Error: "Invalid email or password",
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+
+	if !user.IsVerified {
+		res = dtos.ErrorResponse{
+			Error: "Email not verified",
 		}
 		c.JSON(http.StatusUnauthorized, res)
 		return

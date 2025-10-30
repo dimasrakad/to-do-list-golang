@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Reminder</title>
+    <title>Email verification</title>
     <style>
         body {
             font-family: Arial, Helvetica, sans-serif;
@@ -37,11 +37,12 @@
 
 <body>
     <div class="container">
-        <h2>Reminder: "{{.Title}}"</h2>
+        <h2>Email Verification</h2>
         <p>Hi {{.Name}},</p>
-        <p>Your task <strong>{{.Title}}</strong> is due on <strong>{{.Due}}</strong></p>
-        <p>This is a reminder {{.NotificationType}} before the due time</p>
-        <p>Make sure to check your to do list before it's too late!</p>
+        <p>Thank you for registering with our To Do List App!</p>
+        <p>Please verify your email address by clicking the link below:</p>
+        <p><a href="{{.Link}}">Verify Email</a></p>
+        <p>If you did not sign up for this account, please ignore this email.</p>
 
         <div class="footer">
             <p>- To Do List App</p>
