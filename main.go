@@ -42,9 +42,11 @@ func main() {
 		&models.RefreshToken{},
 		&models.RevokedToken{},
 		&models.Attachment{},
+		&models.EmailLog{},
 	)
 
 	schedulers.StartTokenCleanup()
+	schedulers.StartDueNotifier()
 
 	// Flag
 	seed := flag.Bool("seed", false, "run database seeder")

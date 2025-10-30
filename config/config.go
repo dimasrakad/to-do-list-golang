@@ -20,6 +20,11 @@ type Config struct {
 	JWTRefreshSecret string
 	JWTAccessExpire  string
 	JWTRefreshExpire string
+	SMTPHost         string
+	SMTPPort         string
+	SMTPUser         string
+	SMTPPass         string
+	SMTPFrom         string
 }
 
 var (
@@ -48,6 +53,11 @@ func LoadConfig() *Config {
 			JWTRefreshSecret: getEnv("JWT_REFRESH_SECRET", "example_jwt_refresh_secret"),
 			JWTAccessExpire:  getEnv("JWT_ACCESS_EXPIRE", "15"),     // in minutes
 			JWTRefreshExpire: getEnv("JWT_REFRESH_EXPIRE", "10080"), // in minutes (7*24*60 minutes)
+			SMTPHost:         getEnv("SMTP_HOST", "smtp.gmail.com"),
+			SMTPPort:         getEnv("SMTP_PORT", "587"),
+			SMTPUser:         getEnv("SMTP_USER", "example@gmail.com"),
+			SMTPPass:         getEnv("SMTP_PASS", "examplepassword"),
+			SMTPFrom:         getEnv("SMTP_FROM", "To Do List App <example@gmail.com>"),
 		}
 	})
 

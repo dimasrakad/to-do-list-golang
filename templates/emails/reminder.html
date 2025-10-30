@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Reminder</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        h2 {
+            color: #2c3e50;
+        }
+        p {
+            line-height: 1.6;
+        }
+        .footer {
+            font-size: 12px;
+            color: #777;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Reminder: "{{.Title}}"</h2>
+        <p>Hi {{.Name}},</p>
+        <p>Your task <strong>{{.Title}}</strong> is due on <strong>{{.Due}}</strong></p>
+        <p>This is a reminder {{.NotificationType}} before the due time</p>
+        <p>Make sure to check your to do list before it's too late!</p>
+
+        <div class="footer">
+            <p>- To Do List App</p>
+        </div>
+    </div>
+</body>
+</html>
